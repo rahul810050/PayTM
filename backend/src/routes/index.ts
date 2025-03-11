@@ -1,10 +1,11 @@
 import express, { Request, Response } from 'express';
 import { userRouter } from './users';
 import { signinSchema, signupSchema } from '../types';
-import { userModel } from '../db/db';
+import { accountModel, userModel } from '../db/db';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../config';
+import { accountRouter } from './account';
 
 export const router = express.Router();
 
@@ -69,7 +70,7 @@ router.post("/signup", async (req: Request, res: Response)=> {
 	const hashedPass = await bcrypt.hash(parsedData.data.password, 5);
 
 	try{
-		await userModel.create({
+		const user = await userModel.create({
 			username: parsedData.data.username,
 			email: parsedData.data.email,
 			password: hashedPass,
@@ -77,8 +78,17 @@ router.post("/signup", async (req: Request, res: Response)=> {
 			lastname: parsedData.data.lastname,
 			mobile: parsedData.data.mobile
 		})
+
+		const amount = Math.floor(Math.random() * (10000-1)) + 1;
+
+		await accountModel.create({
+			userId: user._id,
+			balance: amount
+		})
+
 		res.status(200).json({
-			msg: "successfully signed up"
+			msg: "successfully signed up",
+			balance: amount
 		})
 	} catch(e){
 		res.status(400).json({
@@ -88,3 +98,4 @@ router.post("/signup", async (req: Request, res: Response)=> {
 })
 
 router.use("/users", userRouter);
+router.use("/account", accountRouter);

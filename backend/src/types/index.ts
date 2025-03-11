@@ -20,3 +20,8 @@ export const metadataSchema = z.object({
 	lastname: z.string().optional(),
 	password: z.string().optional()
 })
+
+export const transferSchema = z.object({
+	to: z.string(),
+	amount: z.number()
+})

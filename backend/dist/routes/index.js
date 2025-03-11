@@ -20,6 +20,7 @@ const db_1 = require("../db/db");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const config_1 = require("../config");
+const account_1 = require("./account");
 exports.router = express_1.default.Router();
 exports.router.post("/signin", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const parsedData = types_1.signinSchema.safeParse(req.body);
@@ -74,7 +75,7 @@ exports.router.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, f
     }
     const hashedPass = yield bcrypt_1.default.hash(parsedData.data.password, 5);
     try {
-        yield db_1.userModel.create({
+        const user = yield db_1.userModel.create({
             username: parsedData.data.username,
             email: parsedData.data.email,
             password: hashedPass,
@@ -82,8 +83,14 @@ exports.router.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, f
             lastname: parsedData.data.lastname,
             mobile: parsedData.data.mobile
         });
+        const amount = Math.floor(Math.random() * (10000 - 1)) + 1;
+        yield db_1.accountModel.create({
+            userId: user._id,
+            balance: amount
+        });
         res.status(200).json({
-            msg: "successfully signed up"
+            msg: "successfully signed up",
+            balance: amount
         });
     }
     catch (e) {
@@ -93,3 +100,4 @@ exports.router.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, f
     }
 }));
 exports.router.use("/users", users_1.userRouter);
+exports.router.use("/account", account_1.accountRouter);
