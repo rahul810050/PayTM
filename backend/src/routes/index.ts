@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { userRouter } from './users';
 import { signinSchema, signupSchema } from '../types';
 import { userModel } from '../db/db';
@@ -9,7 +9,7 @@ import { JWT_SECRET } from '../config';
 export const router = express.Router();
 
 
-router.post("/signin", async (req, res)=> {
+router.post("/signin", async (req: Request, res: Response)=> {
 	const parsedData = signinSchema.safeParse(req.body);
 	if(!parsedData.success){
 		res.status(400).json({
@@ -17,25 +17,26 @@ router.post("/signin", async (req, res)=> {
 		})
 		return
 	}
+	try{
 	const user = await userModel.findOne({
-		mobile: parsedData.data.mobile,
+		email: parsedData?.data.email,
+		mobile: parsedData?.data.mobile
 	})
-	if(!user){
+	if(!user || !user.password){
 		res.status(400).json({
 			msg: "user does not exist"
 		})
 		return
 	}
-	const isCorrectPass = await bcrypt.compare(parsedData.data.password, user.password!);
-
+	
+	const isCorrectPass = await bcrypt.compare(parsedData.data.password, user.password);
 	if(!isCorrectPass){
 		res.status(400).json({
 			msg: "password incorrect"
 		})
 		return
 	}
-
-	try{
+	
 		const token = await jwt.sign({mobile: user.mobile,  username: user.username}, JWT_SECRET);
 		res.status(200).json({
 			token
@@ -50,7 +51,7 @@ router.post("/signin", async (req, res)=> {
 
 
 
-router.post("/signup", async (req, res)=> {
+router.post("/signup", async (req: Request, res: Response)=> {
 	const parsedData = signupSchema.safeParse(req.body);
 	if(!parsedData.success){
 		res.status(400).json({
@@ -58,13 +59,20 @@ router.post("/signup", async (req, res)=> {
 		})
 		return
 	}
+	const existUser = await userModel.findOne({mobile: parsedData.data.mobile, email: parsedData.data.email})
+	if(existUser){
+		res.status(500).json({
+			msg: "user already exist please go to signin page"
+		})
+	}
 
 	const hashedPass = await bcrypt.hash(parsedData.data.password, 5);
 
 	try{
 		await userModel.create({
 			username: parsedData.data.username,
-			password: parsedData.data.password,
+			email: parsedData.data.email,
+			password: hashedPass,
 			firstname: parsedData.data.firstname,
 			lastname: parsedData.data.lastname,
 			mobile: parsedData.data.mobile

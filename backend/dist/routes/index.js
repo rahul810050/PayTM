@@ -29,23 +29,24 @@ exports.router.post("/signin", (req, res) => __awaiter(void 0, void 0, void 0, f
         });
         return;
     }
-    const user = yield db_1.userModel.findOne({
-        mobile: parsedData.data.mobile,
-    });
-    if (!user) {
-        res.status(400).json({
-            msg: "user does not exist"
-        });
-        return;
-    }
-    const isCorrectPass = yield bcrypt_1.default.compare(parsedData.data.password, user.password);
-    if (!isCorrectPass) {
-        res.status(400).json({
-            msg: "password incorrect"
-        });
-        return;
-    }
     try {
+        const user = yield db_1.userModel.findOne({
+            email: parsedData === null || parsedData === void 0 ? void 0 : parsedData.data.email,
+            mobile: parsedData === null || parsedData === void 0 ? void 0 : parsedData.data.mobile
+        });
+        if (!user || !user.password) {
+            res.status(400).json({
+                msg: "user does not exist"
+            });
+            return;
+        }
+        const isCorrectPass = yield bcrypt_1.default.compare(parsedData.data.password, user.password);
+        if (!isCorrectPass) {
+            res.status(400).json({
+                msg: "password incorrect"
+            });
+            return;
+        }
         const token = yield jsonwebtoken_1.default.sign({ mobile: user.mobile, username: user.username }, config_1.JWT_SECRET);
         res.status(200).json({
             token
@@ -65,11 +66,18 @@ exports.router.post("/signup", (req, res) => __awaiter(void 0, void 0, void 0, f
         });
         return;
     }
+    const existUser = yield db_1.userModel.findOne({ mobile: parsedData.data.mobile, email: parsedData.data.email });
+    if (existUser) {
+        res.status(500).json({
+            msg: "user already exist please go to signin page"
+        });
+    }
     const hashedPass = yield bcrypt_1.default.hash(parsedData.data.password, 5);
     try {
         yield db_1.userModel.create({
             username: parsedData.data.username,
-            password: parsedData.data.password,
+            email: parsedData.data.email,
+            password: hashedPass,
             firstname: parsedData.data.firstname,
             lastname: parsedData.data.lastname,
             mobile: parsedData.data.mobile
