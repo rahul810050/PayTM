@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { metadataSchema } from '../types';
+import { metadataSchema, userdataSchema } from '../types';
 import { userMiddleware } from '../middleware/userMiddleware';
 import { userModel } from '../db/db';
 import bcrypt from 'bcrypt'
@@ -45,21 +45,25 @@ userRouter.put("/metadata",userMiddleware, async (req: Request, res: Response)=>
 	}
 })
 
-userRouter.get("/bulk", async (req: Request, res: Response)=> {
-	const filter = req.query.filter || "";
+userRouter.get("/bulk", userMiddleware,async (req: Request, res: Response)=> {
+	// const filter = req.query.filter || "";
+	// console.log(filter)
+	const userId = req.userId;
 	try{
-		const users = await userModel.find({
-			$or: [{
-				firstname: {
-					"$regex": filter,
-					"$options": "i"
-				},
-				lastname: {
-					"$regex": filter,
-					"$options": "i"
-				}
-			}]
-		})
+	// 	const users = await userModel.find({
+	// 		$or: [{
+	// 				firstName: {
+	// 						"$regex": filter
+	// 				}
+	// 		}, {
+	// 				lastName: {
+	// 						"$regex": filter
+	// 				}
+	// 		}]
+	// })
+
+	const bulkUsers = await userModel.find({});
+	const users = bulkUsers.filter(x => x._id.toString() !== userId);
 
 		if(!users){
 			res.status(403).json({
@@ -67,13 +71,42 @@ userRouter.get("/bulk", async (req: Request, res: Response)=> {
 			})
 			return
 		}
-		res.status(200).json({
-			user: users.map(u=> ({
-				username: u.username,
-				firstname: u.firstname,
-				lastname: u.lastname,
-				id: u._id
+		res.json({
+			user: users.map(user => ({
+					username: user.username,
+					firstname: user.firstname,
+					lastname: user.lastname,
+					_id: user._id
 			}))
+	})
+	} catch(e){
+		res.status(400).json({
+			error: (e as Error).message
+		})
+	}
+})
+
+userRouter.get("/userdata", async(req: Request, res: Response)=> {
+	const parsedData = userdataSchema.safeParse(req.query);
+	if(!parsedData.success){
+		res.status(400).json({
+			msg: "no userId"
+		})
+		return
+	}
+	console.log(parsedData.data.userId)
+	try{
+		const user = await userModel.findOne({
+			_id: parsedData.data.userId
+		})
+		if(!user){
+			res.status(400).json({
+				msg: "user does not exist with this userId"
+			})
+			return
+		}
+		res.status(200).json({
+			user: user
 		})
 	} catch(e){
 		res.status(400).json({
@@ -81,3 +114,32 @@ userRouter.get("/bulk", async (req: Request, res: Response)=> {
 		})
 	}
 })
+
+userRouter.get("/metadata", userMiddleware, async(req: Request, res: Response)=> {
+	const userId = req.userId;
+	if(!userId){
+		res.status(400).json({
+			msg: "no userId"
+		})
+		return
+	}
+	try{
+		const user = await userModel.findOne({
+			_id: userId
+		})
+		if(!user){
+			res.status(400).json({
+				msg: "user does not exist with this userId"
+			})
+			return
+		}
+		res.status(200).json({
+			user: user
+		})
+	} catch(e){
+		res.status(400).json({
+			error: (e as Error).message
+		})
+	}
+})
+

@@ -1,4 +1,4 @@
-import z from 'zod';
+import z, { string } from 'zod';
 
 export const signupSchema = z.object({
 	username: z.string(),
@@ -24,4 +24,8 @@ export const metadataSchema = z.object({
 export const transferSchema = z.object({
 	to: z.string(),
 	amount: z.number()
+})
+
+export const userdataSchema = z.object({
+	userId: z.string()
 })

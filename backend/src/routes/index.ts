@@ -50,8 +50,6 @@ router.post("/signin", async (req: Request, res: Response)=> {
 })
 
 
-
-
 router.post("/signup", async (req: Request, res: Response)=> {
 	const parsedData = signupSchema.safeParse(req.body);
 	if(!parsedData.success){
@@ -96,6 +94,7 @@ router.post("/signup", async (req: Request, res: Response)=> {
 		})
 	}
 })
+
 
 router.use("/users", userRouter);
 router.use("/account", accountRouter);

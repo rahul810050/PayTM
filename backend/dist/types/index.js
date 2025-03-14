@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.transferSchema = exports.metadataSchema = exports.signinSchema = exports.signupSchema = void 0;
+exports.userdataSchema = exports.transferSchema = exports.metadataSchema = exports.signinSchema = exports.signupSchema = void 0;
 const zod_1 = __importDefault(require("zod"));
 exports.signupSchema = zod_1.default.object({
     username: zod_1.default.string(),
@@ -26,4 +26,7 @@ exports.metadataSchema = zod_1.default.object({
 exports.transferSchema = zod_1.default.object({
     to: zod_1.default.string(),
     amount: zod_1.default.number()
+});
+exports.userdataSchema = zod_1.default.object({
+    userId: zod_1.default.string()
 });
